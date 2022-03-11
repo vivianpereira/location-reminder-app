@@ -34,11 +34,10 @@ class AuthenticationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_authentication)
-
+        observeAuthState()
         binding.signInButton.setOnClickListener {
             launchSignInFlow()
         }
-        observeAuthState()
 
 //          TODO: a bonus is to customize the sign in flow to look nice using :
         //https://github.com/firebase/FirebaseUI-Android/blob/master/auth/README.md#custom-layout
@@ -94,9 +93,9 @@ class AuthenticationActivity : AppCompatActivity() {
                             "${FirebaseAuth.getInstance().currentUser?.displayName}!"
                 )
                 Toast.makeText(this,"Sign in successfully!",Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, RemindersActivity::class.java)
-                startActivity(intent)
-                finish()
+//                val intent = Intent(this, RemindersActivity::class.java)
+//                startActivity(intent)
+//                finish()
             } else {
                 // Sign in failed.
                 Log.i(TAG, "Unsuccessful signed in user ${response?.error?.errorCode}")
