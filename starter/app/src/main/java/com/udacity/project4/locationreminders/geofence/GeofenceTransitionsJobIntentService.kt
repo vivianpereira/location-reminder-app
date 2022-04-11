@@ -38,7 +38,12 @@ class GeofenceTransitionsJobIntentService : JobIntentService(), CoroutineScope {
     override fun onHandleWork(intent: Intent) {
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
 
-        if (geofencingEvent.triggeringGeofences.isNotEmpty()) {
+        if (geofencingEvent.hasError()) {
+            Log.d("GeofenceTransitionJob", "Event error: ${geofencingEvent.errorCode}")
+            return
+        }
+
+        if (geofencingEvent.geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
             sendNotification(geofencingEvent.triggeringGeofences)
         }
     }

@@ -11,35 +11,30 @@ import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import kotlinx.coroutines.launch
+import kotlin.Double.Companion.NEGATIVE_INFINITY
 
-class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSource) :
-    BaseViewModel(app) {
-    val reminderTitle = MutableLiveData<String?>()
-    val reminderDescription = MutableLiveData<String?>()
-    val reminderSelectedLocationStr = MutableLiveData<String?>()
-    val selectedPOI = MutableLiveData<PointOfInterest?>()
-    val latitude = MutableLiveData<Double?>()
-    val longitude = MutableLiveData<Double?>()
+class SaveReminderViewModel(
+    val app: Application,
+    private val dataSource: ReminderDataSource
+) : BaseViewModel(app) {
+    val reminderTitle = MutableLiveData<String>()
+    val reminderDescription = MutableLiveData<String>()
+    val reminderSelectedLocationStr = MutableLiveData<String>()
+    val startGeofence = MutableLiveData<Unit>()
+    val geofenceSettingsComplete = MutableLiveData<ReminderDataItem?>()
+    private var latitude: Double = NEGATIVE_INFINITY
+    private var longitude: Double = NEGATIVE_INFINITY
 
     /**
      * Clear the live data objects to start fresh next time the view model gets called
      */
     fun onClear() {
-        reminderTitle.value = null
-        reminderDescription.value = null
-        reminderSelectedLocationStr.value = null
-        selectedPOI.value = null
-        latitude.value = null
-        longitude.value = null
-    }
-
-    /**
-     * Validate the entered data then saves the reminder data to the DataSource
-     */
-    fun validateAndSaveReminder(reminderData: ReminderDataItem) {
-        if (validateEnteredData(reminderData)) {
-            saveReminder(reminderData)
-        }
+        reminderTitle.value = ""
+        reminderDescription.value = ""
+        reminderSelectedLocationStr.value = ""
+        geofenceSettingsComplete.value = null
+        latitude = NEGATIVE_INFINITY
+        longitude = NEGATIVE_INFINITY
     }
 
     /**
@@ -60,6 +55,7 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
             )
             showLoading.value = false
             showToast.value = app.getString(R.string.reminder_saved)
+            onClear()
             navigationCommand.value = NavigationCommand.Back
         }
     }
@@ -67,24 +63,44 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
     /**
      * Validate the entered data and show error to the user if there's any invalid data
      */
-    fun validateEnteredData(reminderData: ReminderDataItem): Boolean {
-        if (reminderData.title.isNullOrEmpty()) {
-            showSnackBarInt.value = R.string.err_enter_title
-            return false
+    fun onSaveReminder() {
+        when {
+            reminderTitle.value.isNullOrEmpty() -> {
+                showSnackBarInt.value = R.string.err_enter_title
+            }
+            reminderSelectedLocationStr.value.isNullOrEmpty() -> {
+                showSnackBarInt.value = R.string.err_select_location
+            }
+            else -> {
+                startGeofence.value = Unit
+            }
         }
-
-        if (reminderData.location.isNullOrEmpty()) {
-            showSnackBarInt.value = R.string.err_select_location
-            return false
-        }
-        return true
     }
 
-    fun onPermissionDenied(){
+    fun onPermissionDenied() {
         showSnackBar.value = "Location services must be enabled to use the app"
     }
 
-    fun onSaveButtonClick(){
-        // salva o PI e navega de volta a tela anterior
+    fun savePoi(poi: PointOfInterest) {
+        reminderSelectedLocationStr.value = poi.name
+        latitude = poi.latLng.latitude
+        longitude = poi.latLng.longitude
+    }
+
+    fun saveDroppedPin(location: String, lat: Double, long: Double) {
+        reminderSelectedLocationStr.value = location
+        latitude = lat
+        longitude = long
+    }
+
+    fun onGeofenceSettingsComplete() {
+        val reminderData = ReminderDataItem(
+            reminderTitle.value,
+            reminderDescription.value,
+            reminderSelectedLocationStr.value,
+            latitude,
+            longitude
+        )
+        geofenceSettingsComplete.value = reminderData
     }
 }
