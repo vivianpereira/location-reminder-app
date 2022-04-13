@@ -20,8 +20,7 @@ class SaveReminderViewModel(
     val reminderTitle = MutableLiveData<String>()
     val reminderDescription = MutableLiveData<String>()
     val reminderSelectedLocationStr = MutableLiveData<String>()
-    val startGeofence = MutableLiveData<Unit>()
-    val geofenceSettingsComplete = MutableLiveData<ReminderDataItem?>()
+    val startGeofence = MutableLiveData<ReminderDataItem?>()
     private var latitude: Double = NEGATIVE_INFINITY
     private var longitude: Double = NEGATIVE_INFINITY
 
@@ -32,7 +31,7 @@ class SaveReminderViewModel(
         reminderTitle.value = ""
         reminderDescription.value = ""
         reminderSelectedLocationStr.value = ""
-        geofenceSettingsComplete.value = null
+        startGeofence.value = null
         latitude = NEGATIVE_INFINITY
         longitude = NEGATIVE_INFINITY
     }
@@ -40,8 +39,7 @@ class SaveReminderViewModel(
     /**
      * Save the reminder to the data source
      */
-    fun saveReminder(reminderData: ReminderDataItem) {
-        showLoading.value = true
+    fun onGeofenceCompleted(reminderData: ReminderDataItem) {
         viewModelScope.launch {
             dataSource.saveReminder(
                 ReminderDTO(
@@ -60,6 +58,11 @@ class SaveReminderViewModel(
         }
     }
 
+    fun onGeofenceFailed(){
+        showLoading.value = false
+        showToast.value = app.getString(R.string.geofence_not_available)
+    }
+
     /**
      * Validate the entered data and show error to the user if there's any invalid data
      */
@@ -72,13 +75,21 @@ class SaveReminderViewModel(
                 showSnackBarInt.value = R.string.err_select_location
             }
             else -> {
-                startGeofence.value = Unit
+                showLoading.value = true
+                val reminder = ReminderDataItem(
+                    reminderTitle.value,
+                    reminderDescription.value,
+                    reminderSelectedLocationStr.value,
+                    latitude,
+                    longitude,
+                )
+                startGeofence.value = reminder
             }
         }
     }
 
     fun onPermissionDenied() {
-        showSnackBar.value = "Location services must be enabled to use the app"
+        showSnackBar.value = app.getString(R.string.location_required_error)
     }
 
     fun savePoi(poi: PointOfInterest) {
@@ -91,16 +102,5 @@ class SaveReminderViewModel(
         reminderSelectedLocationStr.value = location
         latitude = lat
         longitude = long
-    }
-
-    fun onGeofenceSettingsComplete() {
-        val reminderData = ReminderDataItem(
-            reminderTitle.value,
-            reminderDescription.value,
-            reminderSelectedLocationStr.value,
-            latitude,
-            longitude
-        )
-        geofenceSettingsComplete.value = reminderData
     }
 }

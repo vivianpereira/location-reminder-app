@@ -70,6 +70,7 @@ class SaveReminderFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
+        checkPermissionsAndLocationSetting()
         binding.selectLocation.setOnClickListener {
             _viewModel.navigationCommand.value =
                 NavigationCommand.To(SaveReminderFragmentDirections.actionSaveReminderFragmentToSelectLocationFragment())
@@ -78,11 +79,7 @@ class SaveReminderFragment : BaseFragment() {
         binding.saveReminder.setOnClickListener {
             _viewModel.onSaveReminder()
         }
-
-        _viewModel.startGeofence.observe(viewLifecycleOwner) {
-            checkPermissionsAndStartGeofencing()
-        }
-        _viewModel.geofenceSettingsComplete.observe(viewLifecycleOwner) { reminder ->
+        _viewModel.startGeofence.observe(viewLifecycleOwner) { reminder ->
             reminder?.let {
                 addGeofenceForReminder(it)
             }
@@ -92,13 +89,13 @@ class SaveReminderFragment : BaseFragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
-            checkDeviceLocationSettingsAndStartGeofence(false)
+            checkDeviceLocationSettings(false)
         }
     }
 
-    private fun checkPermissionsAndStartGeofencing() {
+    private fun checkPermissionsAndLocationSetting() {
         if (foregroundAndBackgroundLocationPermissionApproved()) {
-            checkDeviceLocationSettingsAndStartGeofence()
+            checkDeviceLocationSettings()
         } else {
             requestForegroundAndBackgroundLocationPermissions()
         }
@@ -159,11 +156,11 @@ class SaveReminderFragment : BaseFragment() {
         ) {
             _viewModel.showSnackBar.value = getString(R.string.permission_denied_explanation)
         } else {
-            checkDeviceLocationSettingsAndStartGeofence()
+            checkDeviceLocationSettings()
         }
     }
 
-    private fun checkDeviceLocationSettingsAndStartGeofence(resolve: Boolean = true) {
+    private fun checkDeviceLocationSettings(resolve: Boolean = true) {
         val locationRequest = LocationRequest.create().apply {
             priority = LocationRequest.PRIORITY_LOW_POWER
         }
@@ -186,13 +183,8 @@ class SaveReminderFragment : BaseFragment() {
                     requireView(),
                     R.string.location_required_error, Snackbar.LENGTH_INDEFINITE
                 ).setAction(android.R.string.ok) {
-                    checkDeviceLocationSettingsAndStartGeofence()
+                    checkDeviceLocationSettings()
                 }.show()
-            }
-        }
-        locationSettingsResponseTask.addOnCompleteListener {
-            if (it.isSuccessful) {
-                _viewModel.onGeofenceSettingsComplete()
             }
         }
     }
@@ -215,21 +207,21 @@ class SaveReminderFragment : BaseFragment() {
             .addGeofence(geofence)
             .build()
 
-//        geofencingClient.removeGeofences(geofencePendingIntent)?.run {
-//            addOnCompleteListener {
-        geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
-            addOnSuccessListener {
-                Log.d("Add Geofence", geofence.requestId)
-            }
-            addOnFailureListener {
-                if ((it.message != null)) {
-                    Log.w(TAG, it.message.toString())
+        geofencingClient.removeGeofences(geofencePendingIntent)?.run {
+            addOnCompleteListener {
+                geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
+                    addOnSuccessListener {
+                        _viewModel.onGeofenceCompleted(reminderData)
+                    }
+                    addOnFailureListener {
+                        _viewModel.onGeofenceFailed()
+                        if ((it.message != null)) {
+                            Log.w(TAG, it.message.toString())
+                        }
+                    }
                 }
             }
         }
-        _viewModel.saveReminder(reminderData)
-//            }
-//        }
     }
 
     override fun onDestroy() {
