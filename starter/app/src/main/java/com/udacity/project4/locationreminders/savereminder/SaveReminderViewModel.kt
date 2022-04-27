@@ -63,9 +63,6 @@ class SaveReminderViewModel(
         showToast.value = app.getString(R.string.geofence_not_available)
     }
 
-    /**
-     * Validate the entered data and show error to the user if there's any invalid data
-     */
     fun onSaveReminder() {
         when {
             reminderTitle.value.isNullOrEmpty() -> {

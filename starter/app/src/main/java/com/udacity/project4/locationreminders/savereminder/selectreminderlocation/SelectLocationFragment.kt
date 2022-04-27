@@ -145,8 +145,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private fun setMapStyle() {
         try {
-            // Customize the styling of the base map using a JSON object defined
-            // in a raw resource file.
             val success = map.setMapStyle(
                 MapStyleOptions.loadRawResourceStyle(
                     requireContext(),
@@ -162,13 +160,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         }
     }
 
-    // Checks that users have given permission
     private fun isPermissionGranted(): Boolean {
         return ContextCompat.checkSelfPermission(requireContext(),
             Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Checks if users have given their location and sets location enabled if so.
     @SuppressLint("MissingPermission")
     private fun enableUserLocation() {
         if (isPermissionGranted()) {
