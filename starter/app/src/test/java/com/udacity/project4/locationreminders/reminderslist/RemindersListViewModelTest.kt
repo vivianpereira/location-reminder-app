@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -24,8 +25,6 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.P])
 @ExperimentalCoroutinesApi
 class RemindersListViewModelTest {
-
-    //TODO: provide testing to the RemindersListViewModel and its live data objects
 
     // subject under test
     private lateinit var remindersListViewModel: RemindersListViewModel
@@ -83,5 +82,10 @@ class RemindersListViewModelTest {
 
         mainCoroutineRule.resumeDispatcher()
         assertThat(remindersListViewModel.showLoading.getOrAwaitValue(), `is`(false))
+        val reminderItem = remindersListViewModel.remindersList.getOrAwaitValue().first()
+        assertThat(reminder.description, `is`(reminderItem.description))
+        assertThat(reminder.title, `is`(reminderItem.title))
+        assertThat(reminder.location, `is`(reminderItem.location))
+        assertThat(reminder.id, `is`(reminderItem.id))
     }
 }
