@@ -25,12 +25,14 @@ import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.sharedViewModel
 
 class SaveReminderFragment : BaseFragment() {
 
     //Get the view model this time as a single to be shared with the another fragment
-    override val _viewModel: SaveReminderViewModel by inject()
+    override val _viewModel: SaveReminderViewModel by sharedViewModel()
     private lateinit var binding: FragmentSaveReminderBinding
+    private var reminderDataItem: ReminderDataItem? = null
 
     private val runningQOrLater = android.os.Build.VERSION.SDK_INT >=
             android.os.Build.VERSION_CODES.Q
@@ -70,7 +72,6 @@ class SaveReminderFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
-        checkPermissionsAndLocationSetting()
         binding.selectLocation.setOnClickListener {
             _viewModel.navigationCommand.value =
                 NavigationCommand.To(SaveReminderFragmentDirections.actionSaveReminderFragmentToSelectLocationFragment())
@@ -81,7 +82,8 @@ class SaveReminderFragment : BaseFragment() {
         }
         _viewModel.startGeofence.observe(viewLifecycleOwner) { reminder ->
             reminder?.let {
-                addGeofenceForReminder(it)
+                reminderDataItem = it
+                checkPermissionsAndLocationSetting()
             }
         }
     }
@@ -185,6 +187,13 @@ class SaveReminderFragment : BaseFragment() {
                 ).setAction(android.R.string.ok) {
                     checkDeviceLocationSettings()
                 }.show()
+            }
+        }
+        locationSettingsResponseTask.addOnCompleteListener {
+            if (it.isSuccessful) {
+                reminderDataItem?.let { reminder ->
+                    addGeofenceForReminder(reminder)
+                }
             }
         }
     }

@@ -58,7 +58,7 @@ class SaveReminderViewModel(
         }
     }
 
-    fun onGeofenceFailed(){
+    fun onGeofenceFailed() {
         showLoading.value = false
         showToast.value = app.getString(R.string.geofence_not_available)
     }
