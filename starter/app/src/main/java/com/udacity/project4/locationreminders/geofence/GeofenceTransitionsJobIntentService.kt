@@ -19,6 +19,8 @@ private const val TAG = "GeofenceTransitionsJob"
 
 class GeofenceTransitionsJobIntentService : JobIntentService(), CoroutineScope {
 
+    private val remindersLocalRepository: ReminderDataSource by inject()
+
     private var coroutineJob: Job = Job()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO + coroutineJob
@@ -43,18 +45,14 @@ class GeofenceTransitionsJobIntentService : JobIntentService(), CoroutineScope {
             return
         }
 
-        if (geofencingEvent.geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-            sendNotification(geofencingEvent.triggeringGeofences)
-        }
+        if (geofencingEvent.geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER)
+            for (geofence in geofencingEvent.triggeringGeofences) {
+                sendNotification(geofence.requestId)
+            }
     }
 
-    private fun sendNotification(triggeringGeofences: List<Geofence>) {
-        val requestId = triggeringGeofences[0].requestId
-        Log.d("send notification", "true")
-
-        //Get the local repository instance
-        val remindersLocalRepository: ReminderDataSource by inject()
-//        Interaction to the repository has to be through a coroutine scope
+    private fun sendNotification(requestId: String) {
+        // Interaction to the repository has to be through a coroutine scope
         CoroutineScope(coroutineContext).launch(SupervisorJob()) {
             //get the reminder with the request id
             val result = remindersLocalRepository.getReminder(requestId)
