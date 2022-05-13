@@ -42,23 +42,18 @@ class GeofenceTransitionsJobIntentService : JobIntentService(), CoroutineScope {
 
         if (geofencingEvent.hasError()) {
             Log.d("GeofenceTransitionJob", "Event error: ${geofencingEvent.errorCode}")
-            return
-        }
-
-        if (geofencingEvent.geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER)
+        }else if (geofencingEvent.geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
             for (geofence in geofencingEvent.triggeringGeofences) {
                 sendNotification(geofence.requestId)
             }
+        }
     }
 
     private fun sendNotification(requestId: String) {
-        // Interaction to the repository has to be through a coroutine scope
         CoroutineScope(coroutineContext).launch(SupervisorJob()) {
-            //get the reminder with the request id
             val result = remindersLocalRepository.getReminder(requestId)
             if (result is Result.Success<ReminderDTO>) {
                 val reminderDTO = result.data
-                //send a notification to the user with the reminder details
                 sendNotification(
                     this@GeofenceTransitionsJobIntentService, ReminderDataItem(
                         reminderDTO.title,

@@ -40,6 +40,7 @@ class SaveReminderViewModel(
      * Save the reminder to the data source
      */
     fun onGeofenceCompleted(reminderData: ReminderDataItem) {
+//        showLoading.value = true
         viewModelScope.launch {
             dataSource.saveReminder(
                 ReminderDTO(
@@ -86,6 +87,7 @@ class SaveReminderViewModel(
     }
 
     fun onPermissionDenied() {
+        showLoading.value = false
         showSnackBar.value = app.getString(R.string.location_required_error)
     }
 
